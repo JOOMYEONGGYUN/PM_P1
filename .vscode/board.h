@@ -87,7 +87,6 @@ void Board::print_job(int job_idx, char job_type, int id) {
     }
 
     output << id << endl;
-    output << print_board << endl;
 
 }
 
@@ -102,6 +101,7 @@ void Board::insert_page(int x1, int y1, int w1, int h1, int id1, char c1) {
     array1[count] = id1; 
     array2[id1] = count;
     count++;
+    print_board();
 }
 
 void Board::delete_page(int id) {
@@ -130,7 +130,7 @@ void Board::delete_page(int id) {
             }
         }
     }// board 다시 채우기
-
+    print_board();
 }
 
 void Board::modify_content(int id, char content) {
@@ -142,6 +142,7 @@ void Board::modify_content(int id, char content) {
             }
         }
     }
+    print_board();
 }
 
 void Board::modify_position(int id, int x, int y) {
@@ -154,4 +155,5 @@ void Board::modify_position(int id, int x, int y) {
             }
         }
     }
+    print_board ();
 }
