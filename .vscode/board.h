@@ -97,14 +97,18 @@ void Board::insert_page(int x1, int y1, int w1, int h1, int id1, char c1) {
 }
 
 void Board::delete_page(int id) {
-    for(int i = count; i >= array2[id]; i--){
-        page_save[array1[i]] = page[array1[i]];//다른 페이지에 복사
-        Page page_temp(array1[i]);
-        page[array1[i]] = page_temp;//초기화
+    for(int a = count; a >= array2[id]; a--){
+        page_save[array1[a]] = page[array1[a]];//다른 페이지에 복사
+        page[array1[a]].setc(' ');
+        for(int i = 0; i < page[array1[a]].geth(); i++){
+            for(int j = 0; j < page[array1[a]].getw(); j++){
+                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
+            }
+        }
+        print_board();
     }
 
-    array2[id] = 0;
-    count--; // delete 대상 page의 array2 초기화 및 count-1
+    count--; // count-1
 
     for(int i = array2[id]; i <= count; i++){
         array1[i] = page_save[array1[i+1]].getid();
@@ -121,13 +125,26 @@ void Board::delete_page(int id) {
                 board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
             }
         }
+        print_board();
     }// board 다시 채우기
-    print_board();
+    array2[id] = 0; // delete 대상 page의 array2 초기화
 }
 
 void Board::modify_content(int id, char content) {
-   page[id].setc(content);
-   for(int a = array2[id]; a <= count; a++){
+    for(int a = count; a >= array2[id]; a--){
+        page_save[array1[a]] = page[array1[a]];//다른 페이지에 복사
+        page[array1[a]].setc(' ');
+        for(int i = 0; i < page[array1[a]].geth(); i++){
+            for(int j = 0; j < page[array1[a]].getw(); j++){
+                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
+            }
+        }
+        print_board();
+    }
+
+    page[id].setc(content);
+
+    for(int a = array2[id]; a <= count; a++){
         for(int i = 0; i < page[array1[a]].geth(); i++){
             for(int j = 0; j < page[array1[a]].getw(); j++){
                 board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
@@ -138,9 +155,21 @@ void Board::modify_content(int id, char content) {
 }
 
 void Board::modify_position(int id, int x, int y) {
-   page[id].setx(x);
-   page[id].sety(y);
-   for(int a = array2[id]; a <= count; a++){
+    for(int a = count; a >= array2[id]; a--){
+        page_save[array1[a]] = page[array1[a]];//다른 페이지에 복사
+        page[array1[a]].setc(' ');
+        for(int i = 0; i < page[array1[a]].geth(); i++){
+            for(int j = 0; j < page[array1[a]].getw(); j++){
+                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
+            }
+        }
+        print_board();
+    }
+
+    page[id].setx(x);
+    page[id].sety(y);
+    
+    for(int a = array2[id]; a <= count; a++){
         for(int i = 0; i < page[array1[a]].geth(); i++){
             for(int j = 0; j < page[array1[a]].getw(); j++){
                 board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
