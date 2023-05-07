@@ -2,6 +2,7 @@ class Page {
     public:
         Page(int x1, int y1, int w1, int h1, int id1, char c1);
         Page(int id1);
+        Page();
         int getx(){return x;}
         int gety(){return y;}
         int getw(){return width;}
@@ -35,5 +36,14 @@ Page::Page(int id1){
     width = 0;
     height = 0;
     id = id1;
+    content = ' ';
+}
+
+Page::Page(){
+    x = 0;
+    y = 0;
+    width = 0;
+    height = 0;
+    id = 992;
     content = ' ';
 }

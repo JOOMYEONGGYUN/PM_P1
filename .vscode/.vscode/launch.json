@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/jis12/123/문서/GitHub/PM_P1/.vscode",
-      "program": "c:/Users/jis12/123/문서/GitHub/PM_P1/.vscode/build/Debug/outDebug",
+      "cwd": "c:/Users/jis12/123/문서/GitHub/PM_P1/.vscode/.vscode",
+      "program": "c:/Users/jis12/123/문서/GitHub/PM_P1/.vscode/.vscode/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

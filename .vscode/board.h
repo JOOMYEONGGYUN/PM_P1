@@ -17,8 +17,8 @@ class Board {
         void delete_page(int id);
         void modify_content(int id, char content);
         void modify_position(int id, int x, int y);
-        Page* page;
-        Page* page_save;
+        Page *page = new Page[32768];
+        Page *page_save = new Page[32768];
         int array1[32768], array2[32768];
         
 
@@ -42,7 +42,6 @@ Board::Board(int num_jobs, int width, int height, ofstream& output_stream): outp
             board[h*width + w] = ' ';
         }
     }
-
 }
 
 Board::~Board() {
@@ -88,7 +87,7 @@ void Board::insert_page(int x1, int y1, int w1, int h1, int id1, char c1) {
     page[id1] = page1;
     for(int i = 0; i < h1; i++){
         for(int j = 0; j < w1; j++){
-            board[x1 + j + width * i] = c1;
+            board[(x1 + j) + width * (y1 + i)] = c1;
         }
     }
     array1[count] = id1; 
@@ -119,7 +118,7 @@ void Board::delete_page(int id) {
     for(int a = array2[id]; a <= count; a++){
         for(int i = 0; i < page[array1[a]].geth(); i++){
             for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * i] = page[array1[a]].getc();
+                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
             }
         }
     }// board 다시 채우기
@@ -131,11 +130,11 @@ void Board::modify_content(int id, char content) {
    for(int a = array2[id]; a <= count; a++){
         for(int i = 0; i < page[array1[a]].geth(); i++){
             for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * i] = page[array1[a]].getc();
+                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
             }
         }
+        print_board();
     }
-    print_board();
 }
 
 void Board::modify_position(int id, int x, int y) {
@@ -144,10 +143,10 @@ void Board::modify_position(int id, int x, int y) {
    for(int a = array2[id]; a <= count; a++){
         for(int i = 0; i < page[array1[a]].geth(); i++){
             for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * i] = page[array1[a]].getc();
+                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
             }
         }
+        print_board();
     }
-    print_board();
 }
 
