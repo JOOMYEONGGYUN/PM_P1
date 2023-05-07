@@ -1,5 +1,7 @@
 #include <fstream>
 #include "page.h"
+#include <vector>
+#include <algorithm>
 
 using std::endl;
 using std::ofstream;
@@ -17,18 +19,19 @@ class Board {
         void delete_page(int id);
         void modify_content(int id, char content);
         void modify_position(int id, int x, int y);
-        Page *page = new Page[32768];
-        Page *page_save = new Page[32768];
-        int array1[32768], array2[32768];
+        
+        void remove_pages(int id); 
+        void return_pages();
+        void insert_only(Page inserted); 
         
 
     private:
-        int num_jobs, width, height; 
+        int num_jobs, width, height, insert_count=0; 
         ofstream& output; 
         char* board; 
+        Page* pagetrack; 
+        std::vector<int> turn_back;
 };
-
-static int count = 0;
 
 Board::Board(int num_jobs, int width, int height, ofstream& output_stream): output(output_stream) {
     this->width = width;
@@ -83,99 +86,61 @@ void Board::print_job(int job_idx, char job_type, int id) {
 }
 
 void Board::insert_page(int x1, int y1, int w1, int h1, int id1, char c1) {
-    Page page1(x1,y1,w1,h1,id1,c1);
-    page[id1] = page1;
-    for(int i = 0; i < h1; i++){
-        for(int j = 0; j < w1; j++){
-            board[(x1 + j) + width * (y1 + i)] = c1;
+    while(pagetrack[insert_count].getid() != -1 ){ 
+        insert_count++;
+    }
+    pagetrack[insert_count-1] = Page(x1, y1, width, height, id1, c1);
+    pagetrack[insert_count-1].setboard(board); 
+
+    for (int current_x=x1; current_x<x1+width; current_x++)
+    {
+        for (int current_y=y1; current_y<y1+height; current_y++)
+        {   
+
+            if (board[current_y*this->width + current_x] != ' ') // content를 update하기 전에 이미 값이 있었다면
+            {
+                for(int p=0; p<insert_count; p++)
+                {
+                    if(pagetrack[p].is_above(pagetrack[insert_count])) // 지금까지 insert된 page를 모두 찾아와 insert 하려는 page와 겹치는지 확인
+                    {
+                        pagetrack[p].abovepage(pagetrack[insert_count].getid());   // 겹친다면 아래에 있는 page의 above 벡터에 insert된 page id를 push_back()
+                        sort(pagetrack[p].getabove().begin(), pagetrack[p].getabove().end());
+                    }
+                    
+                }
+            }
+            board[current_y * this->width + current_x] = (char)content; // 모두 기록한 뒤 insert 진행
+            
         }
     }
-    array1[count] = id1; 
-    array2[id1] = count;
-    count++;
     print_board();
 }
 
 void Board::delete_page(int id) {
-    for(int a = count; a >= array2[id]; a--){
-        page_save[array1[a]] = page[array1[a]];//다른 페이지에 복사
-        page[array1[a]].setc(' ');
-        for(int i = 0; i < page[array1[a]].geth(); i++){
-            for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
-            }
-        }
-        print_board();
-    }
-
-    count--; // count-1
-
-    for(int i = array2[id]; i <= count; i++){
-        array1[i] = page_save[array1[i+1]].getid();
-        array2[array1[i]]--;
-    }// array1 다시 채우기 및 array2 1씩 줄이기 
-
-    for(int i = array2[id]; i <= count; i++){
-        page[array1[i]] = page_save[array1[i]];
-    }// page 다시 채우기
-
-    for(int a = array2[id]; a <= count; a++){
-        for(int i = 0; i < page[array1[a]].geth(); i++){
-            for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
-            }
-        }
-        print_board();
-    }// board 다시 채우기
-    array2[id] = 0; // delete 대상 page의 array2 초기화
+    remove_pages(id);
+    return_pages();
 }
 
 void Board::modify_content(int id, char content) {
-    for(int a = count; a >= array2[id]; a--){
-        page_save[array1[a]] = page[array1[a]];//다른 페이지에 복사
-        page[array1[a]].setc(' ');
-        for(int i = 0; i < page[array1[a]].geth(); i++){
-            for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
-            }
-        }
-        print_board();
+    remove_pages(id);
+    int i = 0;
+    while( pagetrack[i].getid() != id){
+        i++;
     }
-
-    page[id].setc(content);
-
-    for(int a = array2[id]; a <= count; a++){
-        for(int i = 0; i < page[array1[a]].geth(); i++){
-            for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
-            }
-        }
-        print_board();
-    }
+    pagetrack[i].setcontent((int)content);
+    insert_only(pagetrack[i]);
+    print_board();
+    return_pages()
 }
 
 void Board::modify_position(int id, int x, int y) {
-    for(int a = count; a >= array2[id]; a--){
-        page_save[array1[a]] = page[array1[a]];//다른 페이지에 복사
-        page[array1[a]].setc(' ');
-        for(int i = 0; i < page[array1[a]].geth(); i++){
-            for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
-            }
-        }
-        print_board();
-    }
+}
 
-    page[id].setx(x);
-    page[id].sety(y);
-    
-    for(int a = array2[id]; a <= count; a++){
-        for(int i = 0; i < page[array1[a]].geth(); i++){
-            for(int j = 0; j < page[array1[a]].getw(); j++){
-                board[page[array1[a]].getx() + j + width * (page[array1[a]].gety()+i)] = page[array1[a]].getc();
-            }
-        }
-        print_board();
-    }
+bool Board::isOn(Page page1, Page page2){
+    int x1 = page1.getx();
+    int y1 = page1.gety();
+    int h1 = page1.geth();
+    int w1 = page1.getw();
+
 }
 

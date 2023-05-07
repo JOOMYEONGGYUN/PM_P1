@@ -47,3 +47,4 @@ Page::Page(){
     id = 992;
     content = ' ';
 }
+
