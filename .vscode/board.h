@@ -14,7 +14,7 @@ class Board {
         void print_job(int job_idx, char job_type, int id);
 
         //job functions
-        void insert_page(int x, int y, int width, int height, int id, int content);
+        void insert_page(int x1, int y1, int w1, int h1, int id1, char c1);
         void delete_page(int id);
         void modify_content(int id, char content);
         void modify_position(int id, int x, int y);
@@ -23,6 +23,7 @@ class Board {
         int num_jobs, width, height; 
         ofstream& output; 
         char* board; 
+        Page* page[];
 };
 
 
@@ -83,8 +84,14 @@ void Board::print_job(int job_idx, char job_type, int id) {
 }
 
 
-void Board::insert_page(int x, int y, int width, int height, int id, int content) {
-
+void Board::insert_page(int x1, int y1, int w1, int h1, int id1, char c1) {
+    Page page1(x1,y1,w1,h1,id1,c1);
+    page[id1] = &page1;
+    for(int i = 0; i < h1; i++){
+        for(int j = 0; j < w1; j++){
+            board[x1+j+width*i] = c1;
+        }
+    }
 }
 
 void Board::delete_page(int id) {
