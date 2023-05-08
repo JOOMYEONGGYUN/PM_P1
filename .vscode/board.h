@@ -22,22 +22,21 @@ class Board {
         void delete_page(int id);
         void modify_content(int id, char content);
         void modify_position(int id, int x, int y);
-        void set_board(int x, int y, int w, int h, char cont); // board set
-        void board_insert(int x, int y, int w, int h, int id); //insert id to boardlst
-        void board_delete(int x, int y, int w, int h, int id); //delete id from boardlst
-        void delete_seq(int id, int idcop); //page를 순차적으로 삭제
-        int findminidx(int id); //해당 page 위의 page 중에 가장 index가 작은 것 return
-        void insert_seq(int id, int idcop); // page를 순차적으로 insert
-        int findmaxidx(int id); // 해당 page 위의 page 중 가장 index 큰 것 return
+        void set_board(int x, int y, int w, int h, char cont);
+        void board_insert(int x, int y, int w, int h, int id);
+        void board_delete(int x, int y, int w, int h, int id);
+        void delete_seq(int id, int save);
+        void insert_seq(int id, int save);
+        int find_min(int id);
+        int find_max(int id);
 
     private:
         int num_jobs, width, height;
         ofstream& output; 
         char* board;
-        map <int, Page> pagemap; //page의 id와 page를 저장
-        vector<int>* boardlst; //겹치는 content의 index를 boardlst에 넣음
+        map <int, Page> pagemap;
+        vector<int>* boardlst;
 };
-
 
 Board::Board(int num_jobs, int width, int height, ofstream& output_stream): output(output_stream) {
     this->width = width;
@@ -60,7 +59,6 @@ Board::Board(int num_jobs, int width, int height, ofstream& output_stream): outp
 Board::~Board() {
     delete board; 
 }
-
 
 void Board::print_board() {
     int h, w;
@@ -111,52 +109,43 @@ void Board::delete_page(int id){
 
 void Board::modify_content(int id, char content){
    int save = id;
-   delete_seq(id, save); // 페이지 순차적 삭제
-   int x = pagemap[id].getx();
-   int y = pagemap[id].gety();
-   int w1 = pagemap[id].getw();
-   int h1 = pagemap[id].geth();
-   Page modpage = Page(x, y, w1, h1, id, content);
-   pagemap[id] = modpage; // modify content
-   for (int h = y; h < y + h1; h++){
-        for (int w = x; w < x + w1; w++){
+   delete_seq(id, save);
+   Page modpage = Page(pagemap[id].getx(), pagemap[id].gety(), pagemap[id].getw(), pagemap[id].geth(), id, content);
+   pagemap[id] = modpage;
+   for (int h = pagemap[id].gety(); h < pagemap[id].gety() + pagemap[id].geth(); h++){
+        for (int w = pagemap[id].getx(); w < pagemap[id].getx() + pagemap[id].getw(); w++){
             board[h * width + w] = content;
         }
     }
     print_board();
-    insert_seq(id, save); //페이지 순차적 삽입
+    insert_seq(id, save);
 }
 
 void Board::modify_position(int id, int x, int y) {
-   int idcop = id;
-   delete_seq(id, idcop); // 페이지 순차적 삭제
-   int oldx = pagemap[id].getx();
-   int oldy = pagemap[id].gety();
-   int w1 = pagemap[id].getw();
-   int h1 = pagemap[id].geth();
-   char cont = pagemap[id].getc();
-   for (int h = y; h < y + h1; h++){
-        for (int w = x; w < x + w1; w++){
+   int save = id;
+   delete_seq(id, save);
+   for (int h = y; h < y + pagemap[id].geth(); h++){
+        for (int w = x; w < x + pagemap[id].getw(); w++){
             int k = h * width + w;
             for (auto itr = boardlst[k].begin(); itr != boardlst[k].end(); itr++){
                 if (pagemap[boardlst[k][itr - boardlst[k].begin()]].getc() == board[k]){
-                    boardlst[k].insert(itr + 1, id); // boardlst의 새로운 position에 id 삽입
+                    boardlst[k].insert(itr + 1, id);
                     break;
                 }
             }
-            board[k] = cont; // board에 새로운 position 입력
+            board[k] = pagemap[id].getc();
         }
     }
     print_board();
-    insert_seq(id, idcop);
-    for (int h = oldy; h < oldy + h1; h++){
-        for (int w = oldx; w < oldx + w1; w++){
+    insert_seq(id, save);
+    for (int h = pagemap[id].gety(); h < pagemap[id].gety() + pagemap[id].geth(); h++){
+        for (int w = pagemap[id].getx(); w < pagemap[id].getx() + pagemap[id].getw(); w++){
             int k = h * width + w;
-            boardlst[k].erase(remove(boardlst[k].begin(), boardlst[k].end(), id)); // delete old positions
+            boardlst[k].erase(remove(boardlst[k].begin(), boardlst[k].end(), id));
         }
     }
-    Page modpage = Page(x, y, w1, h1, id, cont);
-    pagemap[id] = modpage; // modify content
+    Page modpage = Page(x, y, pagemap[id].getw(), pagemap[id].geth(), id, pagemap[id].getc());
+    pagemap[id] = modpage;
 }
 
 void Board::set_board(int x, int y, int w1, int h1, char cont){
@@ -184,8 +173,8 @@ void Board::board_delete(int x, int y, int w1, int h1, int id){
     }
 }
 
-void Board::delete_seq(int id, int idcop){
-    if (findminidx(id) == 32768){
+void Board::delete_seq(int id, int save){
+    if (find_min(id) == 32768){
         for (int h = pagemap[id].gety(); h < pagemap[id].gety() + pagemap[id].geth(); h++) {
             for (int w = pagemap[id].getx(); w < pagemap[id].getx() + pagemap[id].getw(); w++) {
                 int j = h * width + w;
@@ -195,12 +184,36 @@ void Board::delete_seq(int id, int idcop){
         print_board();
     } 
     else{
-        delete_seq(findminidx(id), idcop);
-        delete_seq(id, idcop);
+        delete_seq(find_min(id), save);
+        delete_seq(id, save);
     }
 }
 
-int Board::findminidx(int id){
+void Board::insert_seq(int id, int save){
+    if (find_max(id) != -1){ 
+        if (id != save){ 
+            set_board(pagemap[id].getx(), pagemap[id].gety(), pagemap[id].getw(), pagemap[id].geth(), pagemap[id].getc());
+            print_board();
+            }
+        insert_seq(find_max(id), save);
+        insert_seq(id, save);
+    }
+    else{
+        if (id != save){
+            for (int h = pagemap[id].gety(); h < pagemap[id].gety() + pagemap[id].geth(); h++){
+                for (int w = pagemap[id].getx(); w < pagemap[id].getx() + pagemap[id].getw(); w++){
+                    if (board[h * width + w] == pagemap[id].getc()){
+                        return;
+                    }
+                }
+            }
+            set_board(pagemap[id].getx(), pagemap[id].gety(), pagemap[id].getw(), pagemap[id].geth(), pagemap[id].getc());
+            print_board();
+        }
+    }
+}
+
+int Board::find_min(int id){
     int idmin = 32768;
     for (int h = pagemap[id].gety(); h < pagemap[id].gety() + pagemap[id].geth(); h++){
         for (int w = pagemap[id].getx(); w < pagemap[id].getx() + pagemap[id].getw(); w++){
@@ -216,31 +229,7 @@ int Board::findminidx(int id){
     return idmin;
 }
 
-void Board::insert_seq(int id, int idcop){
-    if (findmaxidx(id) != -1){ 
-        if (id != idcop){ 
-            set_board(pagemap[id].getx(), pagemap[id].gety(), pagemap[id].getw(), pagemap[id].geth(), pagemap[id].getc());
-            print_board();
-            }
-        insert_seq(findmaxidx(id), idcop);
-        insert_seq(id, idcop);
-    }
-    else{
-        if (id != idcop){
-            for (int h = pagemap[id].gety(); h < pagemap[id].gety() + pagemap[id].geth(); h++){
-                for (int w = pagemap[id].getx(); w < pagemap[id].getx() + pagemap[id].getw(); w++){
-                    if (board[h * width + w] == pagemap[id].getc()){
-                        return;
-                    }
-                }
-            }
-        set_board(pagemap[id].getx(), pagemap[id].gety(), pagemap[id].getw(), pagemap[id].geth(), pagemap[id].getc());
-        print_board();
-    }
-}
-}
-
-int Board::findmaxidx(int id){
+int Board::find_max(int id){
     int idmax = -1;
     vector<int> idcand;
     for (int h = pagemap[id].gety(); h < pagemap[id].gety() + pagemap[id].geth(); h++){
